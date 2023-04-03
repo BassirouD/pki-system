@@ -1,6 +1,7 @@
 from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
 from Crypto.Util import Padding
+import os
 
 
 def aes_gen_secret_key():
@@ -29,6 +30,21 @@ def aes_decrypt(ciphertext, cipher, key, tag):
     # Vérification de l'intégrité du message
     try:
         cipher.verify(tag)
+        print("Message déchiffré:", plaintext.decode())
+        return plaintext.decode()
+    except ValueError:
+        print("Le message est altéré ou invalide.")
+
+
+def aes_decrypt2(key, ciphertext):
+    print(key)
+    print(ciphertext)
+    # Déchiffrement du message
+    cipher = AES.new(key, AES.MODE_EAX)
+    plaintext = cipher.decrypt(ciphertext)
+
+    # Vérification de l'intégrité du message
+    try:
         print("Message déchiffré:", plaintext.decode())
         return plaintext.decode()
     except ValueError:

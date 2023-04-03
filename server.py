@@ -1,4 +1,4 @@
-from functions.mqtt.start_loop_mqtt import *
+from functions.mqtt.mqtt_module import *
 
 if __name__ == '__main__':
-    star_loop_mqtt_server()
+    star_loop_mqtt_server('localhost')
