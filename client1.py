@@ -3,6 +3,7 @@ from functions.mqtt.mqtt_module import *
 from functions.rsa.rsa_module import *
 import base64
 
+
 def send_message():
     message = input("Tapez votre texte: ")
     message_byte = message.encode('utf-8')
@@ -14,7 +15,7 @@ def send_message():
 
     encrypted_key = cipher_secret_key(public_key, key)
 
-    ciphertext, cipher, key, tag = aes_cipher(key, message_byte)
+    ciphertext, key = aes_cipher(key, message_byte)
 
     data = {
         'recipient': recipient,
