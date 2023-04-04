@@ -26,6 +26,8 @@ def send_message():
 
 
 if __name__ == '__main__':
-    # gen_rsa_key()
+
+    # gen_rsa_key('client1')
+    # request_sign_key('client1')
     # private_key, public_key = load_rsa_keypair()
     send_message()

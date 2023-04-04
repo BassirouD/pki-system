@@ -3,8 +3,8 @@ import os
 from Crypto.Cipher import PKCS1_OAEP
 
 
-def gen_rsa_key():
-    isExist = os.path.exists('client1/rsa/private.pem')
+def gen_rsa_key(client):
+    isExist = os.path.exists(f'{client}/rsa/private.pem')
     if isExist:
         print('Key already exist')
         return True
@@ -12,11 +12,11 @@ def gen_rsa_key():
         key_pair = RSA.generate(2048)
 
         # Export de la clé privée dans un fichier
-        with open("client1/rsa/private.pem", "wb") as f:
+        with open(f"{client}/rsa/private.pem", "wb") as f:
             f.write(key_pair.export_key())
 
         # Export de la clé publique dans un fichier
-        with open("client1/rsa/public.pem", "wb") as f:
+        with open(f"{client}/rsa/public.pem", "wb") as f:
             f.write(key_pair.publickey().export_key())
 
         return False
