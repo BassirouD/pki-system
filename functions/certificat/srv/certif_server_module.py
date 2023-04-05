@@ -176,3 +176,20 @@ def load_ca_certif():
         ca_certif = f.read()
 
     return ca_certif
+
+
+def load_pubkey_by_username(username):
+    # Écrire le certificat dans un fichier
+    with open(f'{username}/rsa/public.pem', 'rb') as f:
+        pubkey = f.read()
+
+    return pubkey
+
+
+def srv_save_client_pubkey(pubkey, username):
+    # Écrire le certificat dans un fichier
+    with open(f'functions/certificat/srv/client_pubkey/{username}_public.pem', 'wb') as f:
+        f.write(pubkey)
+        print(f"Public key for {username} saved successfully.")
+
+    return True

@@ -7,6 +7,10 @@ from functions.certificat.srv.certif_server_module import *
 import base64
 
 
+def save_client_pubkey(pubkey):
+    pass
+
+
 def send_ca_certif(data):
     ca_certif = load_ca_certif()
 
@@ -22,6 +26,7 @@ def send_ca_certif(data):
 
 
 def check_topic(topic, data):
+    print('inckeck')
     if topic == 'request_sign_key':
         data_load = json.loads(data)
         public_key = data_load['public_key']
@@ -31,6 +36,12 @@ def check_topic(topic, data):
     if topic == 'get_certif':
         send_ca_certif(data)
 
+    if topic == 'shared_client_pubkey':
+        payload = json.loads(data)
+        pubkey = base64.b64decode(payload['pubkey'].encode('utf-8'))
+        username = payload['username']
+        srv_save_client_pubkey(pubkey, username)
+
 
 def on_connect(client, userdata, flags, rc):
     print("Connected with result code " + str(rc))
@@ -39,8 +50,6 @@ def on_connect(client, userdata, flags, rc):
 
 def on_message(client, userdata, msg):
     print(msg.topic + " " + str(msg.payload))
-    print('topic------>: ', msg.topic)
-    print('topic type------>: ', type(msg.topic))
     my_topic = msg.topic
     data = msg.payload.decode()
     print('**********************************')
@@ -58,4 +67,5 @@ def star_loop_mqtt_server(host):
     client.subscribe('srv')
     client.subscribe('request_sign_key')
     client.subscribe('get_certif')
+    client.subscribe('shared_client_pubkey')
     client.loop_forever()

@@ -28,6 +28,7 @@ if __name__ == '__main__':
     # gen_rsa_key('post1')
     # request_sign_key('post1')
     # private_key, public_key = load_rsa_keypair()
-    # send_message()
+    send_message()
 
-    client_get_ca_certif('post1')
+    # client_get_ca_certif('post1')
+    # client_shared_pubkey('post1')

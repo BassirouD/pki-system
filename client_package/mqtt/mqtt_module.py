@@ -4,6 +4,7 @@ import sys
 import json
 from functions.utils.utils_module import *
 from functions.certificat.srv.certif_server_module import *
+import base64
 
 
 def client_publish(data):
@@ -111,3 +112,20 @@ def client_get_ca_certif(username):
     client.connect('localhost', 5000)
     client.publish('get_certif', username)
     client_consumer_for_caCertif(username)
+
+
+def client_shared_pubkey(username):
+    try:
+        client = paho.Client()
+        client.connect('localhost', 5000)
+        pubkey = load_pubkey_by_username(username)
+
+        payload = {
+            'pubkey': base64.b64encode(pubkey).decode('utf-8'),
+            'username': username
+        }
+        client.publish('shared_client_pubkey', json.dumps(payload))
+        client.disconnect()
+        print('Pubkey shared successfully')
+    except Exception as e:
+        print('Error occurs when trying shared pub client key: ', e)
