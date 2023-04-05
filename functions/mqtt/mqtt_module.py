@@ -7,22 +7,25 @@ from functions.certificat.srv.certif_server_module import *
 import base64
 
 
-def save_client_pubkey(pubkey):
-    pass
-
-
-def send_ca_certif(data):
-    ca_certif = load_ca_certif()
-
-    # payload = {
-    #     'payload': payload.b64encode(encrypted_key).decode('utf-8'),
-    #     'username': data
-    # }
-
+def send_ca_certif_or_pubkey(data, topic):
     client = paho.Client()
     client.connect('localhost', 5000)
-    client.publish('return_certif', ca_certif)
-    client.disconnect()
+    if topic == 'get_certif':
+        ca_certif = load_ca_certif()
+        # payload = {
+        #     'payload': payload.b64encode(encrypted_key).decode('utf-8'),
+        #     'username': data
+        # }
+        client.publish('return_certif', ca_certif)
+        client.disconnect()
+
+    if topic == 'get_pubkey_username':
+        try:
+            client.publish('return_pubkey', data)
+            print('Pubkey sended successfully')
+        except Exception as e:
+            print('Error Pubkey sended: ', e)
+        client.disconnect()
 
 
 def check_topic(topic, data):
@@ -34,13 +37,22 @@ def check_topic(topic, data):
         sign_pubkey(public_key, username)
 
     if topic == 'get_certif':
-        send_ca_certif(data)
+        send_ca_certif_or_pubkey(data, topic)
 
     if topic == 'shared_client_pubkey':
         payload = json.loads(data)
         pubkey = base64.b64decode(payload['pubkey'].encode('utf-8'))
         username = payload['username']
         srv_save_client_pubkey(pubkey, username)
+
+    if topic == 'get_pubkey_username':
+        pubkey = srv_load_client_pubkey(data)
+        # client_a_pubkey_pem = pubkey.export_key(format='PEM')
+        payload = {
+            'username': data,
+            'pubkey': pubkey.decode('utf-8')
+        }
+        send_ca_certif_or_pubkey(json.dumps(payload), topic)
 
 
 def on_connect(client, userdata, flags, rc):
@@ -52,10 +64,6 @@ def on_message(client, userdata, msg):
     print(msg.topic + " " + str(msg.payload))
     my_topic = msg.topic
     data = msg.payload.decode()
-    print('**********************************')
-    print(data)
-    print(type(data))
-    print('**********************************')
     check_topic(my_topic, data)
 
 
@@ -68,4 +76,5 @@ def star_loop_mqtt_server(host):
     client.subscribe('request_sign_key')
     client.subscribe('get_certif')
     client.subscribe('shared_client_pubkey')
+    client.subscribe('get_pubkey_username')
     client.loop_forever()

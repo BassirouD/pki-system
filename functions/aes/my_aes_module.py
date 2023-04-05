@@ -38,22 +38,21 @@ def aes_decrypt(ciphertext, cipher, key, tag):
     # Vérification de l'intégrité du message
     try:
         # cipher.verify(tag)
-        print("Message déchiffré:", plaintext.decode())
+        print("Message déchiffré>", plaintext.decode())
         return plaintext.decode()
     except ValueError:
         print("Le message est altéré ou invalide.")
 
 
 def aes_decrypt2(key, ciphertext):
-    print(key)
-    print(ciphertext)
+    print("Message chiffré> ", ciphertext)
     # Déchiffrement du message
     cipher = AES.new(key, AES.MODE_EAX, nonce=IV)
     plaintext = cipher.decrypt(ciphertext)
 
     # Vérification de l'intégrité du message
     try:
-        print("Message déchiffré:", plaintext.decode())
+        print("Message déchiffré> ", plaintext.decode())
         return plaintext.decode()
     except ValueError:
         print("Le message est altéré ou invalide.")

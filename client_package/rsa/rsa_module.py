@@ -41,14 +41,14 @@ def new_gen_rsa_key(client):
         return False
 
 
-def load_rsa_keypair():
+def load_rsa_keypair(post):
     try:
         # Import de la clé privée depuis le fichier
-        with open("post1/rsa/private.pem", "rb") as f:
+        with open(f"{post}/rsa/private.pem", "rb") as f:
             private_key = RSA.import_key(f.read())
 
         # Import de la clé publique depuis le fichier
-        with open("post1/rsa/public.pem", "rb") as f:
+        with open(f"{post}/rsa/public.pem", "rb") as f:
             public_key = RSA.import_key(f.read())
 
         return private_key, public_key

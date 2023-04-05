@@ -5,6 +5,11 @@ import json
 from functions.utils.utils_module import *
 from functions.certificat.srv.certif_server_module import *
 import base64
+import time
+from client_package.rsa.rsa_module import *
+from Crypto.PublicKey import RSA
+
+client_get_pubkey = paho.Client('get_pubkey_username')
 
 
 def client_publish(data):
@@ -20,13 +25,13 @@ def client_publish(data):
 
 
 def on_message_client(client, userdata, msg):
-    print(msg.topic + " " + str(msg.payload))
+    # print(msg.topic + " " + str(msg.payload))
     data = msg.payload.decode()
     data_load = json.loads(data)
     recipient = data_load['recipient']
     key = data_load['key']
     message = data_load['message']
-    plaintext = decrypt_key_decrypt_message(encrypted_key=key, encrypted_message=message)
+    plaintext = decrypt_key_decrypt_message(encrypted_key=key, encrypted_message=message, recipient=recipient)
 
     print('Message reçu : ', plaintext)
 
@@ -37,7 +42,7 @@ def on_message_client_caCertif(client, userdata, msg):
     # Charger le contenu du certificat depuis le message MQTT
     cert_content = msg.payload
     # Écrire le contenu du certificat dans un fichier
-    with open("post1/certificat/ca_cert.pem", "wb") as f:
+    with open("post3/certificat/ca_cert.pem", "wb") as f:
         f.write(cert_content)
 
     print("Certificat CA enregistré dans ca_cert.pem")
@@ -98,7 +103,6 @@ def on_message_client_get_ca_certif(client, userdata, msg):
 
 
 def client_consumer_for_caCertif(username):
-    print('here known')
     client = paho.Client()
     client.on_connect = on_client_connect
     client.on_message = on_message_client_caCertif
@@ -119,7 +123,6 @@ def client_shared_pubkey(username):
         client = paho.Client()
         client.connect('localhost', 5000)
         pubkey = load_pubkey_by_username(username)
-
         payload = {
             'pubkey': base64.b64encode(pubkey).decode('utf-8'),
             'username': username
@@ -129,3 +132,64 @@ def client_shared_pubkey(username):
         print('Pubkey shared successfully')
     except Exception as e:
         print('Error occurs when trying shared pub client key: ', e)
+
+
+def on_client_connect_for_client_pubkey(client, userdata, flags, rc):
+    print("Connected with result code " + str(rc))
+    time.sleep(5)
+    client.disconnect()
+
+
+def client_consumer_for_client_pubkey(username):
+    # client = paho.Client()
+    client_get_pubkey.on_message = on_message_client_pubkey
+    # client.on_connect = on_client_connect_for_client_pubkey
+    client_get_pubkey.connect('localhost', 5000, 60)
+    client_get_pubkey.subscribe('return_pubkey')
+    client_get_pubkey.loop_forever()
+
+
+def on_message_client_pubkey(client, userdata, msg):
+    # print(msg.topic + " " + str(msg.payload))
+    # print(type(msg.payload.decode()))
+    print('Pub key getted')
+    data_load = json.loads(msg.payload.decode())
+    username = data_load['username']
+    pubkey_b64 = data_load['pubkey']
+
+    public_key = RSA.import_key(pubkey_b64)
+    client_get_pubkey.disconnect()
+    send_message_from_mqtt(public_key, username)
+
+
+def client_get_pubkey_from_srv():
+    # client = paho.Client()
+    recipient = ''
+    while recipient != 'post1' and recipient != 'post2' and recipient != 'post3':
+        recipient = input("Tapez votre destinataire:> ")
+    client_get_pubkey.connect('localhost', 5000)
+    client_get_pubkey.publish('get_pubkey_username', recipient)
+    client_consumer_for_client_pubkey(recipient)
+
+
+def send_message_from_mqtt(public_key, dest):
+    print(public_key)
+    message = input("Tapez votre texte:> ")
+    message_byte = message.encode('utf-8')
+    # recipient = input("Tapez votre destinataire: ")
+
+    # private_key, public_key = load_rsa_keypair()
+
+    key = aes_gen_secret_key()
+
+    encrypted_key = cipher_secret_key(public_key, key)
+
+    ciphertext, key = aes_cipher(key, message_byte)
+
+    data = {
+        'recipient': dest,
+        'key': base64.b64encode(encrypted_key).decode('utf-8'),
+        'message': base64.b64encode(ciphertext).decode('utf-8')
+    }
+    client_publish(data)
+    print('Message sended successfully!!!')

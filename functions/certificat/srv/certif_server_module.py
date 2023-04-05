@@ -193,3 +193,12 @@ def srv_save_client_pubkey(pubkey, username):
         print(f"Public key for {username} saved successfully.")
 
     return True
+
+
+def srv_load_client_pubkey(username):
+    # Écrire le certificat dans un fichier
+    with open(f'functions/certificat/srv/client_pubkey/{username}_public.pem', 'rb') as f:
+        pubkey = f.read()
+        print(f"Public key for {username} loaded successfully.")
+
+    return pubkey
