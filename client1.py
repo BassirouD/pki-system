@@ -1,7 +1,6 @@
-from functions.aes.my_aes_module import *
-from functions.mqtt.mqtt_module import *
-from functions.rsa.rsa_module import *
 import base64
+from client_package.rsa.rsa_module import *
+from client_package.mqtt.mqtt_module import *
 
 
 def send_message():
@@ -26,8 +25,9 @@ def send_message():
 
 
 if __name__ == '__main__':
-
-    # gen_rsa_key('client1')
-    # request_sign_key('client1')
+    # gen_rsa_key('post1')
+    # request_sign_key('post1')
     # private_key, public_key = load_rsa_keypair()
-    send_message()
+    # send_message()
+
+    client_get_ca_certif('post1')

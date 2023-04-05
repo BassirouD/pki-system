@@ -13,5 +13,5 @@ def gen_cert():
 
 
 if __name__ == '__main__':
-    gen_cert()
+    # new_gen_certification()
     star_loop_mqtt_server('localhost')

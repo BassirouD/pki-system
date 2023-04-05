@@ -6,6 +6,19 @@ from functions.mqtt.mqtt_module import *
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 
+# ---------------------------------------------------------
+from cryptography import x509
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives.asymmetric import utils
+from cryptography.hazmat.primitives import hashes
+from cryptography.x509.oid import NameOID
+import datetime
+import paho.mqtt.client as mqtt
+from cryptography.hazmat.primitives.serialization import load_pem_private_key
+from cryptography.hazmat.backends import default_backend
+
 
 def gen_certification():
     try:
@@ -78,3 +91,88 @@ def sign_pubkey(pubkey, username):
         print('Sign pubkey done....')
     except Exception as e:
         print('Exception occurs when trying sign key: ', e)
+
+
+# --------------------------------------------------new approch*-----------------------------------------------------**
+
+def new_gen_certification():
+    # Générer une clé RSA
+    private_key = rsa.generate_private_key(
+        public_exponent=65537,
+        key_size=2048
+    )
+
+    # Générer une clé ECDSA
+    private_key = ec.generate_private_key(
+        curve=ec.SECP256R1()
+    )
+
+    public_key = private_key.public_key()
+    pem_public_key = public_key.public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo
+    )
+
+    # Créer un certificat auto-signé pour la CA
+    subject = issuer = x509.Name([
+        x509.NameAttribute(NameOID.COUNTRY_NAME, u"FR"),
+        x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, u"IDF"),
+        x509.NameAttribute(NameOID.LOCALITY_NAME, u"Reims"),
+        x509.NameAttribute(NameOID.ORGANIZATION_NAME, u"My CA"),
+        x509.NameAttribute(NameOID.COMMON_NAME, u"My CA Root"),
+    ])
+
+    issuer_serial_number = x509.random_serial_number()
+
+    cert = x509.CertificateBuilder().subject_name(
+        subject
+    ).issuer_name(
+        issuer
+    ).public_key(
+        public_key
+    ).serial_number(
+        issuer_serial_number
+    ).not_valid_before(
+        datetime.datetime.utcnow()
+    ).not_valid_after(
+        datetime.datetime.utcnow() + datetime.timedelta(days=365)
+    ).add_extension(
+        x509.BasicConstraints(ca=True, path_length=None),
+        critical=True
+    ).add_extension(
+        x509.KeyUsage(
+            digital_signature=True, key_encipherment=True, content_commitment=False,
+            data_encipherment=False, key_agreement=False, key_cert_sign=True,
+            crl_sign=True, encipher_only=False, decipher_only=False
+        ),
+        critical=True
+    ).sign(private_key, algorithm=hashes.SHA256())
+
+    # Sérialiser la clé privée au format PEM
+    pem_private_key = private_key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.NoEncryption()
+    )
+
+    # Sérialiser le certificat au format PEM
+    pem_cert = cert.public_bytes(serialization.Encoding.PEM)
+
+    with open('functions/certificat/srv/certif/ca_public_key.pem', 'wb') as f:
+        f.write(pem_public_key)
+
+    # Écrire la clé privée dans un fichier
+    with open('functions/certificat/srv/certif/ca_private_key.pem', 'wb') as f:
+        f.write(pem_private_key)
+
+    # Écrire le certificat dans un fichier
+    with open('functions/certificat/srv/certif/ca_cert.pem', 'wb') as f:
+        f.write(pem_cert)
+
+
+def load_ca_certif():
+    # Écrire le certificat dans un fichier
+    with open('functions/certificat/srv/certif/ca_cert.pem', 'rb') as f:
+        ca_certif = f.read()
+
+    return ca_certif
