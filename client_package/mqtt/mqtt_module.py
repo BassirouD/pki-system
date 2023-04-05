@@ -10,6 +10,7 @@ from client_package.rsa.rsa_module import *
 from Crypto.PublicKey import RSA
 
 client_get_pubkey = paho.Client('get_pubkey_username')
+client_get_certif = paho.Client('get_certif')
 
 
 def client_publish(data):
@@ -17,7 +18,7 @@ def client_publish(data):
         client = paho.Client()
         client.connect('localhost', 5000)
         payload = json.dumps(data)
-        client.publish('srv', payload)
+        client.publish('messages', payload)
         client.disconnect()
         print('Data published...!')
     except Exception as e:
@@ -52,12 +53,12 @@ def on_message_client_request_signkey(client, userdata, msg):
     print(msg.topic + " " + str(msg.payload))
 
 
-def client_consumer():
+def client_consumer(post):
     client = paho.Client()
     client.on_connect = on_client_connect
     client.on_message = on_message_client
     client.connect('localhost', 5000, 60)
-    client.subscribe('srv')
+    client.subscribe('canal_' + post)
     client.loop_forever()
 
 

@@ -7,6 +7,14 @@ from functions.certificat.srv.certif_server_module import *
 import base64
 
 
+def redirect_messages(data, mqtt_file):
+    client = paho.Client()
+    client.connect('localhost', 5000, 60)
+    client.publish(mqtt_file, data)
+    print('Dansredirect--------------------------------------+++++++++++++++++++++++++++++++++')
+    client.disconnect()
+
+
 def send_ca_certif_or_pubkey(data, topic):
     client = paho.Client()
     client.connect('localhost', 5000)
@@ -29,7 +37,6 @@ def send_ca_certif_or_pubkey(data, topic):
 
 
 def check_topic(topic, data):
-    print('inckeck')
     if topic == 'request_sign_key':
         data_load = json.loads(data)
         public_key = data_load['public_key']
@@ -52,7 +59,19 @@ def check_topic(topic, data):
             'username': data,
             'pubkey': pubkey.decode('utf-8')
         }
+
         send_ca_certif_or_pubkey(json.dumps(payload), topic)
+
+    if topic == 'messages':
+        print('*************************************************************************')
+
+        data_load = json.loads(data)
+        recipient = data_load['recipient']
+        mqtt_file = 'canal_' + recipient
+        redirect_messages(data, mqtt_file)
+        print(recipient)
+        print(type(recipient))
+        print('*************************************************************************')
 
 
 def on_connect(client, userdata, flags, rc):
@@ -61,7 +80,8 @@ def on_connect(client, userdata, flags, rc):
 
 
 def on_message(client, userdata, msg):
-    print(msg.topic + " " + str(msg.payload))
+    print('------******:> ', msg.topic)
+    # print(msg.topic + " " + str(msg.payload))
     my_topic = msg.topic
     data = msg.payload.decode()
     check_topic(my_topic, data)
@@ -73,6 +93,10 @@ def star_loop_mqtt_server(host):
     client.on_message = on_message
     client.connect(host, 5000, 60)
     client.subscribe('srv')
+    client.subscribe('messages')
+    client.subscribe('canal_post1')
+    client.subscribe('canal_post2')
+    client.subscribe('canal_post3')
     client.subscribe('request_sign_key')
     client.subscribe('get_certif')
     client.subscribe('shared_client_pubkey')
