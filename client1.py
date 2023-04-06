@@ -42,5 +42,6 @@ if __name__ == '__main__':
 
     # request_sign_key('post1')
 
-    client_get_ca_certif('post1')
+    # client_get_ca_certif('post1')
+
     # client_shared_pubkey('post1')

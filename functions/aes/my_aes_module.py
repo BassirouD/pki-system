@@ -52,7 +52,7 @@ def aes_decrypt2(key, ciphertext):
 
     # Vérification de l'intégrité du message
     try:
-        print("Message déchiffré> ", plaintext.decode())
+        # print("Message déchiffré> ", plaintext.decode())
         return plaintext.decode()
     except ValueError:
         print("Le message est altéré ou invalide.")

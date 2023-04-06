@@ -14,6 +14,7 @@ import threading
 client_get_pubkey = paho.Client('get_pubkey_username')
 client_get_CA_certif = paho.Client('get_certif')
 
+
 def on_message_client_caCertifA(client, userdata, msg):
     # print(msg.topic + " " + str(msg.payload))
     # print(type(msg.payload))
@@ -48,6 +49,8 @@ def on_message_client_caCertifC(client, userdata, msg):
         f.write(cert_content)
 
     print("Certificat CA enregistré dans ca_cert.pem pour le post3")
+
+
 def client_publish(data):
     try:
         client = paho.Client()
@@ -65,11 +68,14 @@ def on_message_client(client, userdata, msg):
     data = msg.payload.decode()
     data_load = json.loads(data)
     recipient = data_load['recipient']
+    source = data_load['source']
     key = data_load['key']
     message = data_load['message']
     plaintext = decrypt_key_decrypt_message(encrypted_key=key, encrypted_message=message, recipient=recipient)
 
-    print('Message reçu : ', plaintext)
+    print('############################################################################"')
+    print('Source:> ', source, ' :----: ', 'Message reçu:> ', plaintext)
+    print('############################################################################"')
 
 
 def on_message_client_caCertif(client, userdata, msg):
@@ -82,7 +88,6 @@ def on_message_client_caCertif(client, userdata, msg):
         f.write(cert_content)
 
     print("Certificat CA enregistré dans ca_cert.pem")
-
 
 
 def on_message_client_request_signkey(client, userdata, msg):
@@ -228,7 +233,7 @@ def client_get_pubkey_from_srv():
 
 
 def send_message_from_mqtt(public_key, dest):
-    print(public_key)
+    source = input("Tapez votre nom:> ")
     message = input("Tapez votre texte:> ")
     message_byte = message.encode('utf-8')
     # recipient = input("Tapez votre destinataire: ")
@@ -242,6 +247,7 @@ def send_message_from_mqtt(public_key, dest):
 
     data = {
         'recipient': dest,
+        'source': source,
         'key': base64.b64encode(encrypted_key).decode('utf-8'),
         'message': base64.b64encode(ciphertext).decode('utf-8')
     }
