@@ -11,4 +11,5 @@ if __name__ == '__main__':
     # client_shared_pubkey('post3')
 
     client_consumer('post3')
+    # gen_key_client('post3')
     # client_get_ca_certif('post3')

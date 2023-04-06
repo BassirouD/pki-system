@@ -1,6 +1,17 @@
 from Crypto.PublicKey import RSA
 import os
 from Crypto.Cipher import PKCS1_OAEP
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives import serialization
+from cryptography import x509
+from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives.asymmetric import utils
+from cryptography.hazmat.primitives import hashes
+from cryptography.x509.oid import NameOID
+import datetime
+from OpenSSL import crypto
+from client_package.mqtt.mqtt_module import *
+
 
 
 def gen_rsa_key(client):
@@ -58,7 +69,80 @@ def load_rsa_keypair(post):
 
 
 def cipher_secret_key(public_key, secret_key):
+    print('*********************************************************************************************************')
+    print(public_key)
+    print('*********************************************************************************************************')
+
     cipher_rsa = PKCS1_OAEP.new(public_key)
     encrypted_key = cipher_rsa.encrypt(secret_key)
 
     return encrypted_key
+
+
+# ---------------------------------------------New approach------------------------------------------------------------
+
+
+def gen_key_client(username):
+    # Générer une paire de clés RSA avec une longueur de 2048 bits
+    is_keypair_exist = os.path.exists(f'{username}/rsa/private_key.pem')
+    if is_keypair_exist:
+        key, private_key = new_load_private_key(username)
+
+    else:
+        private_key = rsa.generate_private_key(
+            public_exponent=65537,
+            key_size=2048
+        )
+        public_key = private_key.public_key()
+
+
+        # Afficher les clés
+
+        priv_key = private_key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=serialization.NoEncryption()
+        )
+
+        pub_key = public_key.public_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo
+        )
+
+        with open(f'{username}/rsa/private_key.pem', 'wb') as f:
+            f.write(priv_key)
+
+        with open(f'{username}/rsa/public_key.pem', 'wb') as f:
+            f.write(pub_key)
+
+    csr_serialization = create_demande_certif(private_key, username)
+
+    request_certif(csr_serialization, username)
+
+    return csr_serialization
+
+
+def create_demande_certif(private_key, username):
+    subject = x509.Name([
+        x509.NameAttribute(NameOID.COMMON_NAME, u"Exemple" + username),
+        x509.NameAttribute(NameOID.EMAIL_ADDRESS, u"client@example." + username),
+    ])
+    builder = x509.CertificateSigningRequestBuilder()
+    builder = builder.subject_name(subject)
+    builder = builder.add_extension(
+        x509.BasicConstraints(ca=False, path_length=None), critical=True,
+    )
+
+    csr = builder.sign(private_key, hashes.SHA256())
+
+    csr_serialization = csr.public_bytes(serialization.Encoding.PEM)
+
+    return csr_serialization
+
+
+def new_load_private_key(username):
+    with open(f'{username}/rsa/private_key.pem', 'rb') as key_file:
+        key = key_file.read()
+    pkey = serialization.load_pem_private_key(key, password=None)
+
+    return key, pkey

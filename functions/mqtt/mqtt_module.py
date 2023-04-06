@@ -11,7 +11,6 @@ def redirect_messages(data, mqtt_file):
     client = paho.Client()
     client.connect('localhost', 5000, 60)
     client.publish(mqtt_file, data)
-    print('Dansredirect--------------------------------------+++++++++++++++++++++++++++++++++')
     client.disconnect()
 
 
@@ -59,7 +58,6 @@ def check_topic(topic, data):
             'username': data,
             'pubkey': pubkey.decode('utf-8')
         }
-
         send_ca_certif_or_pubkey(json.dumps(payload), topic)
 
     if topic == 'messages':
@@ -72,6 +70,22 @@ def check_topic(topic, data):
         print(recipient)
         print(type(recipient))
         print('*************************************************************************')
+
+    if topic == 'certificat_demande':
+        data_load = json.loads(data)
+        csr = data_load['csr'].encode('utf-8')
+        username = data_load['username']
+        gen_cert_for_client(csr, username)
+
+
+def gen_cert_for_client(csr, username):
+    cert_byte = srv_gen_certif_for_client(csr, username)
+    client = paho.Client()
+    topic = 'return_certif' + username
+    print(topic)
+    client.publish(topic, cert_byte)
+    print('Certif client sendedd successfully')
+    client.disconnect()
 
 
 def on_connect(client, userdata, flags, rc):
@@ -101,4 +115,5 @@ def star_loop_mqtt_server(host):
     client.subscribe('get_certif')
     client.subscribe('shared_client_pubkey')
     client.subscribe('get_pubkey_username')
+    client.subscribe('certificat_demande')
     client.loop_forever()

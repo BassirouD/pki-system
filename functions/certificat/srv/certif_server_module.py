@@ -51,11 +51,11 @@ def gen_certification():
 
 def load_cert_and_privkey():
     # Charger la clé privée et le certificat
-    with open('functions/certificat/srv/certif/key.pem', 'rb') as key_file:
+    with open('functions/certificat/srv/certif/ca_private_key.pem', 'rb') as key_file:
         key = key_file.read()
         pkey = crypto.load_privatekey(crypto.FILETYPE_PEM, key)
 
-    with open('functions/certificat/srv/certif/cert.pem', 'rb') as cert_file:
+    with open('functions/certificat/srv/certif/ca_cert.pem', 'rb') as cert_file:
         cert = cert_file.read()
         x509 = crypto.load_certificate(crypto.FILETYPE_PEM, cert)
 
@@ -65,24 +65,29 @@ def load_cert_and_privkey():
 def sign_pubkey(pubkey, username):
     try:
         key, pkey, cert, x509 = load_cert_and_privkey()
-        print('key---------------->: ', key)
-        print('pkey---------------->: ', pkey)
-        print('cert---------------->: ', cert)
-        print('x509---------------->: ', x509)
+
         # Créer une demande de signature
         req = crypto.X509Req()
-
+        print(pkey)
         req.get_subject().CN = username  # Nom commun
         pubkey_obj = crypto.load_publickey(crypto.FILETYPE_PEM, pubkey)
-        print(pubkey_obj)
-        print(type(pubkey_obj))
         req.set_pubkey(pubkey_obj)
         req.sign(pkey, 'sha256')
-        print('suite4')
+
+        # Signature de la clé publique
+        signed_pub_key = pkey.sign(
+            pubkey_obj,
+            padding.PSS(
+                mgf=padding.MGF1(hashes.SHA256()),
+                salt_length=padding.PSS.MAX_LENGTH
+            ),
+            hashes.SHA256()
+        )
+
+        print('signed_pub_key-------->', signed_pub_key)
+
         with open(f'{username}/rsa/certs/signed_cert.pem', 'wb') as f:
             f.write(crypto.dump_certificate(crypto.FILETYPE_PEM, req))
-
-        print('req---------------->: ', req)
 
         data = crypto.dump_certificate(crypto.FILETYPE_PEM, req)
         # print('data---------------->: ', data)
@@ -97,10 +102,10 @@ def sign_pubkey(pubkey, username):
 
 def new_gen_certification():
     # Générer une clé RSA
-    private_key = rsa.generate_private_key(
-        public_exponent=65537,
-        key_size=2048
-    )
+    # private_key = rsa.generate_private_key(
+    #     public_exponent=65537,
+    #     key_size=2048
+    # )
 
     # Générer une clé ECDSA
     private_key = ec.generate_private_key(
@@ -168,6 +173,8 @@ def new_gen_certification():
     # Écrire le certificat dans un fichier
     with open('functions/certificat/srv/certif/ca_cert.pem', 'wb') as f:
         f.write(pem_cert)
+
+    return True
 
 
 def load_ca_certif():

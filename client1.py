@@ -2,6 +2,7 @@ import base64
 from client_package.rsa.rsa_module import *
 from client_package.mqtt.mqtt_module import *
 
+
 def send_message():
     message = input("Tapez votre texte: ")
     message_byte = message.encode('utf-8')
@@ -25,13 +26,21 @@ def send_message():
     print(type(public_key))
 
 
-
 if __name__ == '__main__':
     # gen_rsa_key('post1')
+    gen_key_client('post1')
+    # print(result)
+
+    # key, pkey = new_load_private_key('post1')
+    # print(pkey)
     # request_sign_key('post1')
     # private_key, public_key = load_rsa_keypair()
     # send_message()
+
+    #Envoie message
     client_get_pubkey_from_srv()
+
+    # request_sign_key('post1')
 
     # client_get_ca_certif('post3')
     # client_shared_pubkey('post1')

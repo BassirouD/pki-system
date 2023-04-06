@@ -6,8 +6,9 @@ from functions.utils.utils_module import *
 from functions.certificat.srv.certif_server_module import *
 import base64
 import time
-from client_package.rsa.rsa_module import *
+# from client_package.rsa.rsa_module import *
 from Crypto.PublicKey import RSA
+from functions.rsa.rsa_module import *
 
 client_get_pubkey = paho.Client('get_pubkey_username')
 client_get_certif = paho.Client('get_certif')
@@ -63,8 +64,8 @@ def client_consumer(post):
 
 
 def on_client_connect(client, userdata, flags, rc):
-    print("Connected with result code " + str(rc))
-    client.subscribe("test/topic")
+    print("Wainting messages... ")
+    # client.subscribe("test/topic")
 
 
 def request_sign_key(username):
@@ -180,7 +181,6 @@ def send_message_from_mqtt(public_key, dest):
     # recipient = input("Tapez votre destinataire: ")
 
     # private_key, public_key = load_rsa_keypair()
-
     key = aes_gen_secret_key()
 
     encrypted_key = cipher_secret_key(public_key, key)
@@ -194,3 +194,45 @@ def send_message_from_mqtt(public_key, dest):
     }
     client_publish(data)
     print('Message sended successfully!!!')
+
+
+def request_certif(csr, username):
+    client = paho.Client()
+    client.connect('localhost', 5000)
+    data = {
+        'csr': csr.decode('utf-8'),
+        'username': username
+    }
+    payload = json.dumps(data)
+    client.publish('certificat_demande', payload)
+    print('Certificat_demande sended')
+    client.disconnect()
+    client_consumer_for_ownerCertif(username)
+
+
+def on_message_client_ownerCertif(client, userdata, msg):
+    print(msg.topic + " " + str(msg.payload))
+    print(type(msg.payload))
+    # Charger le contenu du certificat depuis le message MQTT
+    cert_content = msg.payload
+    # Écrire le contenu du certificat dans un fichier
+    with open("post1/certificat/owner_cert.pem", "wb") as f:
+        f.write(cert_content)
+
+    print("Certificat CA enregistré dans ca_cert.pem")
+
+
+def on_client_connect_ownerCertif(client, userdata, flags, rc):
+    print("Connected with result code " + str(rc))
+
+
+def client_consumer_for_ownerCertif(username):
+    client = paho.Client()
+    client.connect('localhost', 5000, 60)
+    topic = 'return_certif' + username
+    # client.on_connect = on_client_connect_ownerCertif
+    client.on_message = on_message_client_ownerCertif
+
+    client.subscribe(topic)
+    client.disconnect()
+    # client.loop_forever()
