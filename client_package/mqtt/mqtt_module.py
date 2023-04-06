@@ -9,11 +9,45 @@ import time
 # from client_package.rsa.rsa_module import *
 from Crypto.PublicKey import RSA
 from functions.rsa.rsa_module import *
+import threading
 
 client_get_pubkey = paho.Client('get_pubkey_username')
-client_get_certif = paho.Client('get_certif')
+client_get_CA_certif = paho.Client('get_certif')
+
+def on_message_client_caCertifA(client, userdata, msg):
+    # print(msg.topic + " " + str(msg.payload))
+    # print(type(msg.payload))
+    # Charger le contenu du certificat depuis le message MQTT
+    cert_content = msg.payload
+    # Écrire le contenu du certificat dans un fichier
+    with open("post1/certificat/ca_cert.pem", "wb") as f:
+        f.write(cert_content)
+
+    print("Certificat CA enregistré dans ca_cert.pem pour le post1")
 
 
+def on_message_client_caCertifB(client, userdata, msg):
+    # print(msg.topic + " " + str(msg.payload))
+    # print(type(msg.payload))
+    # Charger le contenu du certificat depuis le message MQTT
+    cert_content = msg.payload
+    # Écrire le contenu du certificat dans un fichier
+    with open("post2/certificat/ca_cert.pem", "wb") as f:
+        f.write(cert_content)
+
+    print("Certificat CA enregistré dans ca_cert.pem pour le post2")
+
+
+def on_message_client_caCertifC(client, userdata, msg):
+    # print(msg.topic + " " + str(msg.payload))
+    # print(type(msg.payload))
+    # Charger le contenu du certificat depuis le message MQTT
+    cert_content = msg.payload
+    # Écrire le contenu du certificat dans un fichier
+    with open("post3/certificat/ca_cert.pem", "wb") as f:
+        f.write(cert_content)
+
+    print("Certificat CA enregistré dans ca_cert.pem pour le post3")
 def client_publish(data):
     try:
         client = paho.Client()
@@ -50,6 +84,7 @@ def on_message_client_caCertif(client, userdata, msg):
     print("Certificat CA enregistré dans ca_cert.pem")
 
 
+
 def on_message_client_request_signkey(client, userdata, msg):
     print(msg.topic + " " + str(msg.payload))
 
@@ -66,6 +101,11 @@ def client_consumer(post):
 def on_client_connect(client, userdata, flags, rc):
     print("Wainting messages... ")
     # client.subscribe("test/topic")
+
+
+def on_client_connect_ca_certif(client, userdata, flags, rc):
+    print("Wainting CA certif... ")
+    # client.disconnect()
 
 
 def request_sign_key(username):
@@ -106,17 +146,30 @@ def on_message_client_get_ca_certif(client, userdata, msg):
 
 def client_consumer_for_caCertif(username):
     client = paho.Client()
-    client.on_connect = on_client_connect
-    client.on_message = on_message_client_caCertif
+    client.on_connect = on_client_connect_ca_certif
+    if username == 'post1':
+        client.on_message = on_message_client_caCertifA
+    if username == 'post2':
+        client.on_message = on_message_client_caCertifB
+    if username == 'post3':
+        client.on_message = on_message_client_caCertifC
     client.connect('localhost', 5000, 60)
     client.subscribe('return_certif')
-    client.loop_forever()
+    loop_thread = threading.Thread(target=client.loop_forever)
+    loop_thread.start()
+    time.sleep(1)
+    # Stop the thread
+    client.disconnect()
+    client.loop_stop()
+
+    # client.loop_forever(5)
 
 
 def client_get_ca_certif(username):
     client = paho.Client()
     client.connect('localhost', 5000)
     client.publish('get_certif', username)
+    client.disconnect()
     client_consumer_for_caCertif(username)
 
 

@@ -61,15 +61,10 @@ def check_topic(topic, data):
         send_ca_certif_or_pubkey(json.dumps(payload), topic)
 
     if topic == 'messages':
-        print('*************************************************************************')
-
         data_load = json.loads(data)
         recipient = data_load['recipient']
         mqtt_file = 'canal_' + recipient
         redirect_messages(data, mqtt_file)
-        print(recipient)
-        print(type(recipient))
-        print('*************************************************************************')
 
     if topic == 'certificat_demande':
         data_load = json.loads(data)
