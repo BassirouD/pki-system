@@ -15,6 +15,7 @@ import threading
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
 client_get_pubkey = paho.Client('get_pubkey_username')
+client_get_certif = paho.Client('get_certif_username')
 client_get_CA_certif = paho.Client('get_certif')
 
 
@@ -83,6 +84,7 @@ def on_message_client(client, userdata, msg):
     print('Source:> ', source, ' :----: ', 'Message reçu:> ', plaintext)
     print('############################################################################"')
 
+
 def on_message_client2(client, userdata, msg):
     # print(msg.topic + " " + str(msg.payload))
     data = msg.payload.decode()
@@ -97,6 +99,7 @@ def on_message_client2(client, userdata, msg):
     print('############################################################################"')
     print('Source:> ', source, ' :----: ', 'Message reçu:> ', plaintext)
     print('############################################################################"')
+
 
 def on_message_client_caCertif(client, userdata, msg):
     print(msg.topic + " " + str(msg.payload))
@@ -122,6 +125,7 @@ def client_consumer(post):
     client.subscribe('canal_' + post)
     client.loop_forever()
 
+
 def client_consumer2(post):
     client = paho.Client()
     client.on_connect = on_client_connect2
@@ -129,6 +133,7 @@ def client_consumer2(post):
     client.connect('localhost', 5000, 60)
     client.subscribe('canal_' + post)
     client.loop_forever()
+
 
 def on_client_connect(client, userdata, flags, rc):
     print("Wainting messages... ")
@@ -138,6 +143,7 @@ def on_client_connect(client, userdata, flags, rc):
 def on_client_connect2(client, userdata, flags, rc):
     print("Wainting messages... ")
     # client.subscribe("test/topic")
+
 
 def on_client_connect_ca_certif(client, userdata, flags, rc):
     print("Wainting CA certif... ")
@@ -241,12 +247,12 @@ def client_consumer_for_client_pubkey(username):
 
 
 def client_consumer_for_client_certif(username):
-    client = paho.Client()
-    client.on_message = on_message_client_certif
+    # client = paho.Client()
+    client_get_certif.on_message = on_message_client_certif
     # client.on_connect = on_client_connect_for_client_pubkey
-    client.connect('localhost', 5000, 60)
-    client.subscribe('return_client_certif')
-    client.loop_forever()
+    client_get_certif.connect('localhost', 5000, 60)
+    client_get_certif.subscribe('return_client_certif')
+    client_get_certif.loop_forever()
 
 
 def on_message_client_pubkey(client, userdata, msg):
@@ -277,6 +283,7 @@ def on_message_client_certif(client, userdata, msg):
     print(pubkey)
     print(public_key_pycrypto)
     print('/***********************************')
+    client_get_certif.disconnect()
 
     send_message_from_mqtt_certif(public_key_pycrypto, username)
 
@@ -296,9 +303,9 @@ def client_get_certif_client_from_srv():
     while recipient != 'post1' and recipient != 'post2' and recipient != 'post3':
         recipient = input("Tapez votre destinataire:> ")
 
-    client = paho.Client()
-    client.connect('localhost', 5000)
-    client.publish('get_certif_client', recipient)
+    # client = paho.Client()
+    client_get_certif.connect('localhost', 5000)
+    client_get_certif.publish('get_certif_client', recipient)
     client_consumer_for_client_certif(recipient)
 
 
@@ -346,7 +353,6 @@ def send_message_from_mqtt_certif(public_key, dest):
     }
     client_publish(data)
     print('Message sended successfully!!!')
-
 
 
 def request_certif(csr, username):
