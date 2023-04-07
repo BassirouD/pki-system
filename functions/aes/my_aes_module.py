@@ -14,6 +14,7 @@ def aes_gen_secret_key():
     key = KEY
     print('*********************************')
     print('result genkey aes: ', key)
+    print('result genkey aes type: ', type(key))
     return key
 
 

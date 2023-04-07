@@ -28,7 +28,9 @@ def send_message():
 
 if __name__ == '__main__':
     # gen_rsa_key('post1')
-    # gen_key_client('post1')
+
+    # Le certificat est stocker dans le server
+    gen_key_client('post1')
     # print(result)
 
     # key, pkey = new_load_private_key('post1')
@@ -37,8 +39,10 @@ if __name__ == '__main__':
     # private_key, public_key = load_rsa_keypair()
     # send_message()
 
-    #Envoie message
-    client_get_pubkey_from_srv()
+    # Envoie message
+    # client_get_pubkey_from_srv()
+    #
+    client_get_certif_client_from_srv()
 
     # request_sign_key('post1')
 

@@ -2,16 +2,14 @@ from Crypto.PublicKey import RSA
 import os
 from Crypto.Cipher import PKCS1_OAEP
 from cryptography.hazmat.primitives.asymmetric import rsa
-from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives import serialization, hashes
 from cryptography import x509
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.asymmetric import utils
-from cryptography.hazmat.primitives import hashes
 from cryptography.x509.oid import NameOID
 import datetime
 from OpenSSL import crypto
 from client_package.mqtt.mqtt_module import *
-
 
 
 def gen_rsa_key(client):
@@ -69,14 +67,22 @@ def load_rsa_keypair(post):
 
 
 def cipher_secret_key(public_key, secret_key):
-    print('*********************************************************************************************************')
-    print(public_key)
-    print('*********************************************************************************************************')
-
     cipher_rsa = PKCS1_OAEP.new(public_key)
     encrypted_key = cipher_rsa.encrypt(secret_key)
-
+    print('encrypted_key---', encrypted_key)
     return encrypted_key
+
+
+# def cipher_secret_key2(public_key, secret_key):
+#     encrypted_key = public_key.encrypt(
+#         secret_key,
+#         padding.OAEP(
+#             mgf=padding.MGF1(algorithm=hashes.SHA256()),
+#             algorithm=hashes.SHA256(),
+#             label=None
+#         )
+#     )
+#     return encrypted_key
 
 
 # ---------------------------------------------New approach------------------------------------------------------------
@@ -94,7 +100,6 @@ def gen_key_client(username):
             key_size=2048
         )
         public_key = private_key.public_key()
-
 
         # Afficher les clés
 

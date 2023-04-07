@@ -184,6 +184,12 @@ def load_ca_certif():
 
     return ca_certif
 
+def load_client_certif(client):
+    # Écrire le certificat dans un fichier
+    with open(f'functions/certificat/clients/sign_pubkeys/{client}_certif.pem', 'rb') as f:
+        client_certif = f.read()
+
+    return client_certif
 
 def load_pubkey_by_username(username):
     # Écrire le certificat dans un fichier

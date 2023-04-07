@@ -34,6 +34,12 @@ def send_ca_certif_or_pubkey(data, topic):
             print('Error Pubkey sended: ', e)
         client.disconnect()
 
+    if topic == 'get_certif_client':
+        # client_certif = load_client_certif(data)
+        client.publish('return_client_certif', data)
+        print(data)
+        client.disconnect()
+
 
 def check_topic(topic, data):
     if topic == 'request_sign_key':
@@ -44,6 +50,14 @@ def check_topic(topic, data):
 
     if topic == 'get_certif':
         send_ca_certif_or_pubkey(data, topic)
+
+    if topic == 'get_certif_client':
+        client_certif = load_client_certif(data)
+        payload = {
+            'username': data,
+            'certif': client_certif.decode('utf-8')
+        }
+        send_ca_certif_or_pubkey(json.dumps(payload), topic)
 
     if topic == 'shared_client_pubkey':
         payload = json.loads(data)
@@ -77,7 +91,6 @@ def gen_cert_for_client(csr, username):
     cert_byte = srv_gen_certif_for_client(csr, username)
     client = paho.Client()
     topic = 'return_certif' + username
-    print(topic)
     client.publish(topic, cert_byte)
     print('Certif client sendedd successfully')
     client.disconnect()
@@ -108,6 +121,7 @@ def star_loop_mqtt_server(host):
     client.subscribe('canal_post3')
     client.subscribe('request_sign_key')
     client.subscribe('get_certif')
+    client.subscribe('get_certif_client')
     client.subscribe('shared_client_pubkey')
     client.subscribe('get_pubkey_username')
     client.subscribe('certificat_demande')

@@ -33,6 +33,28 @@ def decrypt_key_decrypt_message(encrypted_key, encrypted_message, recipient):
     return plaintext
 
 
+def decrypt_key_decrypt_message2(encrypted_key, encrypted_message, recipient):
+    encrypted_key = b64decode(encrypted_key)
+    encrypted_message = b64decode(encrypted_message)
+
+    private_key, public_key = load_rsa_keypair2(recipient)
+
+    print('================>:', private_key, ' ', '=====================>', public_key)
+    print('================>:', type(private_key), ' ', '=====================>', type(public_key))
+
+    # decrypted_key = decypt_secret_key2(private_key, encrypted_key)
+
+    cipher = PKCS1_OAEP.new(private_key)
+    decrypted_key = cipher.decrypt(encrypted_key)
+    # aes_key = private_key.decrypt(encrypted_key)
+
+    # decrypted_message = decrypt_f(encrypted_message, aes_key)
+
+    # pas parti
+    plaintext = aes_decrypt2(key=decrypted_key, ciphertext=encrypted_message)
+    return plaintext
+
+
 def srv_gen_certif_for_client(csr_data, username):
     csr = x509.load_pem_x509_csr(csr_data)
     # Extraire la clé publique du client

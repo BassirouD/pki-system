@@ -4,12 +4,15 @@ import sys
 import json
 from functions.utils.utils_module import *
 from functions.certificat.srv.certif_server_module import *
+from client_package.utils.utils_module import *
+from client_package.rsa.rsa_module import *
 import base64
 import time
 # from client_package.rsa.rsa_module import *
 from Crypto.PublicKey import RSA
 from functions.rsa.rsa_module import *
 import threading
+from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
 client_get_pubkey = paho.Client('get_pubkey_username')
 client_get_CA_certif = paho.Client('get_certif')
@@ -52,14 +55,16 @@ def on_message_client_caCertifC(client, userdata, msg):
 
 
 def client_publish(data):
+    client = paho.Client()
+    client.connect('localhost', 5000)
     try:
-        client = paho.Client()
-        client.connect('localhost', 5000)
+
         payload = json.dumps(data)
         client.publish('messages', payload)
         client.disconnect()
         print('Data published...!')
     except Exception as e:
+        client.disconnect()
         print('Error occurs when trying to publish data: ', e)
 
 
@@ -68,6 +73,7 @@ def on_message_client(client, userdata, msg):
     data = msg.payload.decode()
     data_load = json.loads(data)
     recipient = data_load['recipient']
+    print('----------------------------------------------recipient:>', recipient)
     source = data_load['source']
     key = data_load['key']
     message = data_load['message']
@@ -77,6 +83,20 @@ def on_message_client(client, userdata, msg):
     print('Source:> ', source, ' :----: ', 'Message reçu:> ', plaintext)
     print('############################################################################"')
 
+def on_message_client2(client, userdata, msg):
+    # print(msg.topic + " " + str(msg.payload))
+    data = msg.payload.decode()
+    data_load = json.loads(data)
+    recipient = data_load['recipient']
+    print('----------------------------------------------recipient:>', recipient)
+    source = data_load['source']
+    key = data_load['key']
+    message = data_load['message']
+    plaintext = decrypt_key_decrypt_message2(encrypted_key=key, encrypted_message=message, recipient=recipient)
+
+    print('############################################################################"')
+    print('Source:> ', source, ' :----: ', 'Message reçu:> ', plaintext)
+    print('############################################################################"')
 
 def on_message_client_caCertif(client, userdata, msg):
     print(msg.topic + " " + str(msg.payload))
@@ -102,11 +122,22 @@ def client_consumer(post):
     client.subscribe('canal_' + post)
     client.loop_forever()
 
+def client_consumer2(post):
+    client = paho.Client()
+    client.on_connect = on_client_connect2
+    client.on_message = on_message_client2
+    client.connect('localhost', 5000, 60)
+    client.subscribe('canal_' + post)
+    client.loop_forever()
 
 def on_client_connect(client, userdata, flags, rc):
     print("Wainting messages... ")
     # client.subscribe("test/topic")
 
+
+def on_client_connect2(client, userdata, flags, rc):
+    print("Wainting messages... ")
+    # client.subscribe("test/topic")
 
 def on_client_connect_ca_certif(client, userdata, flags, rc):
     print("Wainting CA certif... ")
@@ -209,10 +240,18 @@ def client_consumer_for_client_pubkey(username):
     client_get_pubkey.loop_forever()
 
 
+def client_consumer_for_client_certif(username):
+    client = paho.Client()
+    client.on_message = on_message_client_certif
+    # client.on_connect = on_client_connect_for_client_pubkey
+    client.connect('localhost', 5000, 60)
+    client.subscribe('return_client_certif')
+    client.loop_forever()
+
+
 def on_message_client_pubkey(client, userdata, msg):
     # print(msg.topic + " " + str(msg.payload))
     # print(type(msg.payload.decode()))
-    print('Pub key getted')
     data_load = json.loads(msg.payload.decode())
     username = data_load['username']
     pubkey_b64 = data_load['pubkey']
@@ -220,6 +259,26 @@ def on_message_client_pubkey(client, userdata, msg):
     public_key = RSA.import_key(pubkey_b64)
     client_get_pubkey.disconnect()
     send_message_from_mqtt(public_key, username)
+
+
+def on_message_client_certif(client, userdata, msg):
+    # print(msg.topic + " " + str(msg.payload))
+    data_load = json.loads(msg.payload.decode())
+    username = data_load['username']
+    certif = data_load['certif'].encode('utf-8')
+    # certif = msg.payload
+    pubkey = extract_pubkey_form_certif(certif)
+    public_key_bytes = pubkey.public_bytes(
+        encoding=Encoding.PEM,
+        format=PublicFormat.SubjectPublicKeyInfo
+    )
+    public_key_pycrypto = RSA.import_key(public_key_bytes)
+    print('/***********************************')
+    print(pubkey)
+    print(public_key_pycrypto)
+    print('/***********************************')
+
+    send_message_from_mqtt_certif(public_key_pycrypto, username)
 
 
 def client_get_pubkey_from_srv():
@@ -232,6 +291,17 @@ def client_get_pubkey_from_srv():
     client_consumer_for_client_pubkey(recipient)
 
 
+def client_get_certif_client_from_srv():
+    recipient = ''
+    while recipient != 'post1' and recipient != 'post2' and recipient != 'post3':
+        recipient = input("Tapez votre destinataire:> ")
+
+    client = paho.Client()
+    client.connect('localhost', 5000)
+    client.publish('get_certif_client', recipient)
+    client_consumer_for_client_certif(recipient)
+
+
 def send_message_from_mqtt(public_key, dest):
     source = input("Tapez votre nom:> ")
     message = input("Tapez votre texte:> ")
@@ -240,6 +310,10 @@ def send_message_from_mqtt(public_key, dest):
 
     # private_key, public_key = load_rsa_keypair()
     key = aes_gen_secret_key()
+
+    print('************************************************************************************')
+    print(public_key)
+    print('************************************************************************************')
 
     encrypted_key = cipher_secret_key(public_key, key)
 
@@ -253,6 +327,26 @@ def send_message_from_mqtt(public_key, dest):
     }
     client_publish(data)
     print('Message sended successfully!!!')
+
+
+def send_message_from_mqtt_certif(public_key, dest):
+    source = input("Tapez votre nom:> ")
+    message = input("Tapez votre texte:> ")
+    message_byte = message.encode('utf-8')
+    # recipient = input("Tapez votre destinataire: ")
+    # private_key, public_key = load_rsa_keypair()
+    key = aes_gen_secret_key()
+    encrypted_key = cipher_secret_key(public_key, key)
+    ciphertext, key = aes_cipher(key, message_byte)
+    data = {
+        'recipient': dest,
+        'source': source,
+        'key': base64.b64encode(encrypted_key).decode('utf-8'),
+        'message': base64.b64encode(ciphertext).decode('utf-8')
+    }
+    client_publish(data)
+    print('Message sended successfully!!!')
+
 
 
 def request_certif(csr, username):
@@ -270,6 +364,7 @@ def request_certif(csr, username):
 
 
 def on_message_client_ownerCertif(client, userdata, msg):
+    print('lololoollooooooooooo')
     print(msg.topic + " " + str(msg.payload))
     print(type(msg.payload))
     # Charger le contenu du certificat depuis le message MQTT
@@ -278,7 +373,7 @@ def on_message_client_ownerCertif(client, userdata, msg):
     with open("post1/certificat/owner_cert.pem", "wb") as f:
         f.write(cert_content)
 
-    print("Certificat CA enregistré dans ca_cert.pem")
+    print("Certificat enregistré dans ca_cert.pem")
 
 
 def on_client_connect_ownerCertif(client, userdata, flags, rc):
@@ -289,8 +384,9 @@ def client_consumer_for_ownerCertif(username):
     client = paho.Client()
     client.connect('localhost', 5000, 60)
     topic = 'return_certif' + username
-    # client.on_connect = on_client_connect_ownerCertif
+    client.on_connect = on_client_connect_ownerCertif
     client.on_message = on_message_client_ownerCertif
+    print(topic)
 
     client.subscribe(topic)
     client.disconnect()
