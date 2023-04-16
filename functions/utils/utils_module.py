@@ -38,9 +38,9 @@ def decrypt_key_decrypt_message2(encrypted_key, encrypted_message, recipient):
     encrypted_message = b64decode(encrypted_message)
 
     private_key, public_key = load_rsa_keypair2(recipient)
-
-    print('================>:', private_key, ' ', '=====================>', public_key)
-    print('================>:', type(private_key), ' ', '=====================>', type(public_key))
+    #
+    # print('================>:', private_key, ' ', '=====================>', public_key)
+    # print('================>:', type(private_key), ' ', '=====================>', type(public_key))
 
     # decrypted_key = decypt_secret_key2(private_key, encrypted_key)
 

@@ -16,6 +16,7 @@ import datetime
 import paho.mqtt.client as mqtt
 from cryptography.hazmat.primitives.serialization import load_pem_private_key
 from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization, hashes
 
 
 # def decrypt_key_decrypt_message(encrypted_key, encrypted_message):
@@ -32,7 +33,6 @@ from cryptography.hazmat.backends import default_backend
 #
 #     plaintext = aes_decrypt2(key=decrypted_key, ciphertext=encrypted_message)
 #     return plaintext
-
 
 
 def decrypt_key_decrypt_message(encrypted_key, encrypted_message, recipient):
@@ -56,3 +56,46 @@ def extract_pubkey_form_certif(certif):
     pub_key = certif.public_key()
 
     return pub_key
+
+
+def load_and_extract_ca_pubkey(client):
+    with open(f'{client}/certificat/ca_cert.pem', 'rb') as f:
+        ca_public_key_data = f.read()
+
+    ca_cert = x509.load_pem_x509_certificate(ca_public_key_data)
+    ca_pub_key = ca_cert.public_key()
+    print('///////////////ca_pub_key///////////////////////')
+    print(ca_pub_key)
+    print('///////////////ca_pub_key///////////////////////')
+    return ca_pub_key
+
+
+def extract_signature(client_cert_data):
+    client_cert = x509.load_pem_x509_certificate(client_cert_data, default_backend())
+    signature = client_cert.signature
+    print('///////////////signature///////////////////////')
+    print(signature)
+    print(type(signature))
+    print('///////////////signature///////////////////////')
+
+    return signature
+
+
+def verify_signature(ca_pub_key, signature, client_public_key):
+    # client_public_key_bytes = client_public_key.public_bytes(
+    #     encoding=serialization.Encoding.PEM,
+    #     format=serialization.PublicFormat.SubjectPublicKeyInfo
+    # )
+    client_public_key_bytes = client_public_key.export_key(format='DER')
+
+    try:
+        ca_pub_key.verify(
+            signature,
+            client_public_key_bytes,
+            ec.ECDSA(hashes.SHA256())
+        )
+        print("Signature du certificat valide")
+        return True
+    except Exception as e:
+        print("Signature du certificat invalide: ", e)
+        return False

@@ -90,7 +90,7 @@ def on_message_client2(client, userdata, msg):
     data = msg.payload.decode()
     data_load = json.loads(data)
     recipient = data_load['recipient']
-    print('----------------------------------------------recipient:>', recipient)
+    # print('----------------------------------------------recipient:>', recipient)
     source = data_load['source']
     key = data_load['key']
     message = data_load['message']
@@ -279,12 +279,9 @@ def on_message_client_certif(client, userdata, msg):
         format=PublicFormat.SubjectPublicKeyInfo
     )
     public_key_pycrypto = RSA.import_key(public_key_bytes)
-    print('/***********************************')
-    print(pubkey)
-    print(public_key_pycrypto)
-    print('/***********************************')
     client_get_certif.disconnect()
-
+    # ***********************************************************Verify signature***************************************
+    # signature = extract_signature(certif)
     send_message_from_mqtt_certif(public_key_pycrypto, username)
 
 
@@ -299,9 +296,9 @@ def client_get_pubkey_from_srv():
 
 
 def client_get_certif_client_from_srv():
-    recipient = ''
+    recipient = input("Tapez votre destinataire:> ")
     while recipient != 'post1' and recipient != 'post2' and recipient != 'post3':
-        recipient = input("Tapez votre destinataire:> ")
+        recipient = input("Choisir entre post1 post2 post3:> ")
 
     # client = paho.Client()
     client_get_certif.connect('localhost', 5000)
@@ -338,6 +335,12 @@ def send_message_from_mqtt(public_key, dest):
 
 def send_message_from_mqtt_certif(public_key, dest):
     source = input("Tapez votre nom:> ")
+    while source != 'post1' and source != 'post2' and source != 'post3':
+        source = input("Choisir entre post1 post2 post3:> ")
+    # ***********************************************************Verify signature***************************************
+    # ca_pub_key = load_and_extract_ca_pubkey(source)
+    # verify_signature(ca_pub_key, signature, public_key)
+
     message = input("Tapez votre texte:> ")
     message_byte = message.encode('utf-8')
     # recipient = input("Tapez votre destinataire: ")
