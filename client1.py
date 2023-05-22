@@ -1,6 +1,7 @@
 import base64
 from client_package.rsa.rsa_module import *
 from client_package.mqtt.mqtt_module import *
+import os
 
 
 def send_message():
@@ -29,9 +30,16 @@ def send_message():
 if __name__ == '__main__':
     # gen_rsa_key('post1')
 
+    # ******************************************
+
     # Le certificat est stocker dans le server
-    # gen_key_client('post1')
+    has_certif = os.path.exists(f'post1/rsa/public_key.pem')
+    if has_certif:
+        print('Already has certif')
+    else:
+        gen_key_client('post1')
     # print(result)
+    # ******************************************
 
     # key, pkey = new_load_private_key('post1')
     # print(pkey)
@@ -44,6 +52,9 @@ if __name__ == '__main__':
     #
     # new Envoie message
     client_get_certif_client_from_srv()
+
+    # Ecoute
+    # client_consumer2('post1')
     # request_sign_key('post1')
 
     # client_get_ca_certif('post1')

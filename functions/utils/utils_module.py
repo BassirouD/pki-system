@@ -84,7 +84,7 @@ def srv_gen_certif_for_client(csr_data, username):
     ca_private_key = serialization.load_pem_private_key(
         client_private_key_data, password=None, backend=default_backend())
 
-    cert = builder.sign(ca_private_key, hashes.SHA256())
+    cert = builder.sign(ca_private_key, hashes.SHA256(), backend=default_backend())
 
     cert_byte = cert.public_bytes(serialization.Encoding.PEM)
 
